@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExprEval — Smart Expression Converter & Evaluator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 7 4 4 20 4 20 7"></polyline>
+            <line x1="9" y1="20" x2="15" y2="20"></line>
+            <line x1="12" y1="4" x2="12" y2="20"></line>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <div class="brand-row">
+            <h1>Expr<span>Eval</span></h1>
+            <span class="badge-tag">DSA Studio</span>
+          </div>
+          <span class="brand-subtitle">Smart Expression Converter, Evaluator & Stack Visualizer</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="action-btn" id="theme-btn" onclick="toggleTheme()" title="Switch Light/Dark Mode">
+          <svg id="theme-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <span id="theme-label">Light</span>
+        </button>
+
+        <button class="action-btn" onclick="openHistoryModal()" title="View Calculation History">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>History</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Expression Input & Controls -->
+    <section class="control-card">
+      <div class="input-container">
+        <div class="input-wrap">
+          <span class="input-icon-glyph">ƒ(x)</span>
+          <input
+            type="text"
+            class="expr-text-input"
+            id="expr-input"
+            placeholder="Enter infix expression, e.g. (10 + 20) * 5 or 2 ^ 3 + 4 * 5"
+            value="(10 + 20) * 5"
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+        <div class="primary-actions">
+          <button class="btn-cta ghost" onclick="clearInput()">Clear</button>
+          <button class="btn-cta primary" onclick="processExpression('evaluate')">
+            <span>Evaluate & Convert</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="presets-bar">
+        <div class="presets-list">
+          <span class="presets-label">Presets:</span>
+          <button class="preset-pill" onclick="loadExample('10 + 20 * 5')">10 + 20 * 5</button>
+          <button class="preset-pill" onclick="loadExample('(10 + 20) * 5')">(10 + 20) * 5</button>
+          <button class="preset-pill" onclick="loadExample('50 / (5 + 5)')">50 / (5 + 5)</button>
+          <button class="preset-pill" onclick="loadExample('2 ^ 3 + 4 * 5')">2 ^ 3 + 4 * 5</button>
+          <button class="preset-pill" onclick="loadExample('A + B * C')">A + B * C</button>
+        </div>
+
+        <button class="toggle-keypad-btn" onclick="toggleKeypad()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="6" y1="8" x2="6" y2="8"></line>
+            <line x1="10" y1="8" x2="10" y2="8"></line>
+            <line x1="14" y1="8" x2="14" y2="8"></line>
+            <line x1="18" y1="8" x2="18" y2="8"></line>
+            <line x1="6" y1="12" x2="6" y2="12"></line>
+            <line x1="10" y1="12" x2="10" y2="12"></line>
+            <line x1="14" y1="12" x2="14" y2="12"></line>
+            <line x1="18" y1="12" x2="18" y2="12"></line>
+            <line x1="7" y1="16" x2="17" y2="16"></line>
+          </svg>
+          <span id="keypad-btn-text">Keypad</span>
+        </button>
+      </div>
+
+      <!-- Keypad Drawer -->
+      <div class="math-keypad" id="math-keypad">
+        <button class="keypad-key" onclick="insertToken('(')">(</button>
+        <button class="keypad-key" onclick="insertToken(')')">)</button>
+        <button class="keypad-key operator" onclick="insertToken(' ^ ')">^</button>
+        <button class="keypad-key operator" onclick="insertToken(' / ')">/</button>
+        <button class="keypad-key" onclick="insertToken('7')">7</button>
+        <button class="keypad-key" onclick="insertToken('8')">8</button>
+        <button class="keypad-key" onclick="insertToken('9')">9</button>
+        <button class="keypad-key operator" onclick="insertToken(' * ')">*</button>
+
+        <button class="keypad-key" onclick="insertToken('4')">4</button>
+        <button class="keypad-key" onclick="insertToken('5')">5</button>
+        <button class="keypad-key" onclick="insertToken('6')">6</button>
+        <button class="keypad-key operator" onclick="insertToken(' - ')">-</button>
+        <button class="keypad-key" onclick="insertToken('1')">1</button>
+        <button class="keypad-key" onclick="insertToken('2')">2</button>
+        <button class="keypad-key" onclick="insertToken('3')">3</button>
+        <button class="keypad-key operator" onclick="insertToken(' + ')">+</button>
+
+        <button class="keypad-key" onclick="insertToken('0')">0</button>
+        <button class="keypad-key" onclick="insertToken('.')">.</button>
+        <button class="keypad-key operator" onclick="insertToken(' % ')">%</button>
+        <button class="keypad-key function" onclick="insertToken('sqrt(')">sqrt</button>
+        <button class="keypad-key function" onclick="insertToken('sin(')">sin</button>
+        <button class="keypad-key function" onclick="insertToken('cos(')">cos</button>
+        <button class="keypad-key function" onclick="insertToken('log(')">log</button>
+        <button class="keypad-key function" onclick="insertToken('!')">n!</button>
+      </div>
+    </section>
+
+    <!-- 4 Output Pillars -->
+    <section class="pillars-grid">
+      <!-- Infix -->
+      <div class="pillar-card infix">
+        <div class="pillar-header">
+          <div class="pillar-tag-wrap">
+            <span class="pillar-indicator-dot cyan"></span>
+            <span class="pillar-tag">Original Infix</span>
+          </div>
+          <button class="copy-icon-btn" onclick="copyValue('res-infix')" title="Copy Infix">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="pillar-content" id="res-infix">(10 + 20) * 5</div>
+      </div>
+
+      <!-- Postfix -->
+      <div class="pillar-card postfix">
+        <div class="pillar-header">
+          <div class="pillar-tag-wrap">
+            <span class="pillar-indicator-dot purple"></span>
+            <span class="pillar-tag">Postfix (RPN)</span>
+          </div>
+          <button class="copy-icon-btn" onclick="copyValue('res-postfix')" title="Copy Postfix">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="pillar-content" id="res-postfix">10 20 + 5 *</div>
+      </div>
+
+      <!-- Prefix -->
+      <div class="pillar-card prefix">
+        <div class="pillar-header">
+          <div class="pillar-tag-wrap">
+            <span class="pillar-indicator-dot indigo"></span>
+            <span class="pillar-tag">Prefix (Polish)</span>
+          </div>
+          <button class="copy-icon-btn" onclick="copyValue('res-prefix')" title="Copy Prefix">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="pillar-content" id="res-prefix">* + 10 20 5</div>
+      </div>
+
+      <!-- Evaluated Result -->
+      <div class="pillar-card result">
+        <div class="pillar-header">
+          <div class="pillar-tag-wrap">
+            <span class="pillar-indicator-dot green"></span>
+            <span class="pillar-tag" style="color:var(--success)">Evaluated Result</span>
+          </div>
+          <button class="copy-icon-btn" onclick="copyValue('res-eval')" title="Copy Result">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="pillar-content" id="res-eval">150</div>
+      </div>
+    </section>
+
+    <!-- Split Workspace: Stack Visualizer & Expression Tree -->
+    <section class="split-workspace">
+
+      <!-- Left: Stack Visualizer -->
+      <div class="studio-panel">
+        <div class="panel-header-row">
+          <div class="panel-heading">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Stack Operations</span>
+          </div>
+
+          <div class="stepper-deck">
+            <button class="stepper-btn" onclick="stepFirst()" title="Reset to start">⏮</button>
+            <button class="stepper-btn" onclick="stepPrev()" title="Previous step">◀</button>
+            <button class="stepper-btn play-state" id="play-btn" onclick="togglePlay()" title="Auto Play">▶ Play</button>
+            <button class="stepper-btn" onclick="stepNext()" title="Next step">▶</button>
+            <button class="stepper-btn" onclick="stepLast()" title="Jump to end">⏭</button>
+            <span class="step-indicator" id="step-counter">Step 1 / 1</span>
+          </div>
+        </div>
+
+        <div class="stack-hardware-layout">
+          <!-- Glass Chamber -->
+          <div class="stack-glass-beaker" id="stack-chamber">
+            <span class="stack-empty-sign" id="stack-empty-lbl">Empty</span>
+          </div>
+
+          <!-- Step Details -->
+          <div class="stack-status-deck">
+            <div class="meta-pod">
+              <div class="meta-pod-lbl">Current Scanned Token</div>
+              <div class="meta-pod-val highlight" id="vis-token">-</div>
+            </div>
+            <div class="meta-pod">
+              <div class="meta-pod-lbl">LIFO Operation & Decision Rule</div>
+              <div class="meta-pod-val action-rule" id="vis-action">Ready</div>
+            </div>
+            <div class="meta-pod">
+              <div class="meta-pod-lbl">Output Expression Buffer</div>
+              <div class="meta-pod-val" id="vis-output" style="color:var(--accent-purple)">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Expression Tree -->
+      <div class="studio-panel">
+        <div class="panel-header-row">
+          <div class="panel-heading">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="5" r="3"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <circle cx="6" cy="19" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="M12 12l-6 4"></path>
+              <path d="M12 12l6 4"></path>
+            </svg>
+            <span>Expression Tree Hierarchy</span>
+          </div>
+          <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted)" id="tree-depth-lbl">Depth: -</span>
+        </div>
+
+        <div class="tree-stage-wrapper">
+          <div class="tree-canvas-box">
+            <svg id="tree-svg" style="width:100%; min-height:160px;"></svg>
+          </div>
+
+          <div class="traversals-row">
+            <div class="trav-card">
+              <div class="trav-type">Inorder</div>
+              <div class="trav-string" id="tree-inorder">-</div>
+            </div>
+            <div class="trav-card">
+              <div class="trav-type">Preorder</div>
+              <div class="trav-string" id="tree-preorder">-</div>
+            </div>
+            <div class="trav-card">
+              <div class="trav-type">Postorder</div>
+              <div class="trav-string" id="tree-postorder">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Bottom Status Strip (Footer) -->
+    <footer class="bottom-status-strip">
+      <div class="status-indicator">
+        <span class="status-dot-pulse"></span>
+        <span id="foot-status">Engine ready • Shunting-Yard active</span>
+      </div>
+      <div>
+        <span id="foot-tokens">Tokens: 7</span>
+        <span style="margin: 0 8px; opacity:0.4">|</span>
+        <span id="foot-complexity">Time: O(N) • Space: O(N)</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- History Dialog Modal -->
+  <div class="modal-backdrop" id="history-modal" onclick="closeHistoryModal(event)">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <span class="modal-title">Expression History</span>
+        <div style="display:flex; gap:8px">
+          <button class="action-btn" onclick="clearHistoryApi()" style="color:var(--danger)">Clear</button>
+          <button class="action-btn" onclick="closeHistoryModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-list-body" id="history-modal-body">
+        <div style="text-align:center; color:var(--text-muted); font-size:12px; padding:24px 0;">No history recorded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    const API = window.location.origin.startsWith('http') ? '/api' : 'http://localhost:3001/api';
+    let currentSteps = [];
+    let currentStepIdx = 0;
+    let playTimer = null;
+
+    // Theme Switcher (Dark vs Light)
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-mode');
+      document.getElementById('theme-label').textContent = isLight ? 'Dark' : 'Light';
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+    // Load saved theme if any
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-mode');
+      document.getElementById('theme-label').textContent = 'Dark';
+    }
+
+    // Keypad Drawer
+    function toggleKeypad() {
+      const pad = document.getElementById('math-keypad');
+      pad.style.display = pad.style.display === 'grid' ? 'none' : 'grid';
+    }
+
+    function insertToken(tok) {
+      const input = document.getElementById('expr-input');
+      input.value += tok;
+      input.focus();
+    }
+
+    function clearInput() {
+      document.getElementById('expr-input').value = '';
+      document.getElementById('res-infix').textContent = '-';
+      document.getElementById('res-postfix').textContent = '-';
+      document.getElementById('res-prefix').textContent = '-';
+      document.getElementById('res-eval').textContent = '-';
+      renderStack([]);
+      document.getElementById('tree-svg').innerHTML = '';
+      document.getElementById('tree-inorder').textContent = '-';
+      document.getElementById('tree-preorder').textContent = '-';
+      document.getElementById('tree-postorder').textContent = '-';
+      document.getElementById('foot-status').textContent = 'Status: Cleared';
+      document.getElementById('foot-tokens').textContent = 'Tokens: 0';
+    }
+
+    function loadExample(expr) {
+      document.getElementById('expr-input').value = expr;
+      processExpression('evaluate');
+    }
+
+    function copyValue(elementId) {
+      const txt = document.getElementById(elementId).textContent;
+      if (!txt || txt === '-') return;
+      navigator.clipboard.writeText(txt).then(() => {
+        const originalText = document.getElementById(elementId).textContent;
+        document.getElementById(elementId).style.opacity = '0.5';
+        setTimeout(() => { document.getElementById(elementId).style.opacity = '1'; }, 200);
+      });
+    }
+
+    // Unified Expression Processor
+    async function processExpression(actionType) {
+      const expr = document.getElementById('expr-input').value.trim();
+      if (!expr) return;
+
+      document.getElementById('foot-status').textContent = 'Processing stack algorithms...';
+
+      try {
+        const res = await fetch(`${API}/calculate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expression: expr, module: 'ExprEval' })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          // 1. Output Pillars
+          document.getElementById('res-infix').textContent = data.expression;
+          document.getElementById('res-postfix').textContent = data.postfix || '-';
+          document.getElementById('res-prefix').textContent = data.prefix || '-';
+          document.getElementById('res-eval').textContent = (data.result !== undefined && !isNaN(data.result)) ? data.result : 'Algebraic Form';
+
+          // 2. Status Strip
+          document.getElementById('foot-status').textContent = 'Evaluated successfully';
+          document.getElementById('foot-tokens').textContent = `Tokens: ${data.tokens ? data.tokens.length : 0}`;
+
+          // 3. Stack Visualizer Stepper Data
+          currentSteps = data.sySteps || [];
+          currentStepIdx = 0;
+          renderCurrentStep();
+
+          // 4. Expression Tree
+          if (data.tree) {
+            document.getElementById('tree-depth-lbl').textContent = `Depth: ${data.tree.metrics.depth} • Nodes: ${data.tree.metrics.totalNodes}`;
+            document.getElementById('tree-inorder').textContent = data.tree.traversals.inorder;
+            document.getElementById('tree-preorder').textContent = data.tree.traversals.preorder;
+            document.getElementById('tree-postorder').textContent = data.tree.traversals.postorder;
+            renderTreeSvg(data.tree.root);
+          }
+        } else {
+          alert('Syntax Error: ' + (data.error || 'Invalid expression'));
+          document.getElementById('foot-status').textContent = 'Syntax error: ' + (data.error || 'Check input');
+        }
+      } catch (err) {
+        document.getElementById('foot-status').textContent = 'Server connection error';
+      }
+    }
+
+    // Stepper Rendering
+    function renderCurrentStep() {
+      if (!currentSteps.length) {
+        document.getElementById('step-counter').textContent = 'Step 0 / 0';
+        document.getElementById('vis-token').textContent = '-';
+        document.getElementById('vis-action').textContent = 'No active operations';
+        document.getElementById('vis-output').textContent = '-';
+        renderStack([]);
+        return;
+      }
+
+      const s = currentSteps[currentStepIdx];
+      document.getElementById('step-counter').textContent = `Step ${currentStepIdx + 1} / ${currentSteps.length}`;
+      document.getElementById('vis-token').textContent = s.token;
+      document.getElementById('vis-action').textContent = s.action;
+      document.getElementById('vis-output').textContent = (s.output || []).join(' ') || '(empty)';
+
+      renderStack(s.opStack || []);
+    }
+
+    function renderStack(items) {
+      const chamber = document.getElementById('stack-chamber');
+      chamber.innerHTML = '';
+      if (!items || !items.length) {
+        chamber.innerHTML = '<span class="stack-empty-sign" id="stack-empty-lbl">Empty</span>';
+        return;
+      }
+      items.forEach((item, idx) => {
+        const block = document.createElement('div');
+        block.className = 'stack-data-block' + (idx === items.length - 1 ? ' top-register' : '');
+        block.innerHTML = `
+          <span class="reg-idx">[${idx}]</span>
+          <span>${item}</span>
+          <span style="font-size:9px; opacity:0.8">${idx === items.length - 1 ? 'TOP' : ''}</span>
+        `;
+        chamber.appendChild(block);
+      });
+    }
+
+    function stepNext() {
+      if (currentStepIdx < currentSteps.length - 1) {
+        currentStepIdx++;
+        renderCurrentStep();
+      } else {
+        stopPlay();
+      }
+    }
+
+    function stepPrev() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderCurrentStep();
+      }
+    }
+
+    function stepFirst() {
+      stopPlay();
+      currentStepIdx = 0;
+      renderCurrentStep();
+    }
+
+    function stepLast() {
+      stopPlay();
+      if (currentSteps.length) {
+        currentStepIdx = currentSteps.length - 1;
+        renderCurrentStep();
+      }
+    }
+
+    function togglePlay() {
+      if (playTimer) {
+        stopPlay();
+      } else {
+        document.getElementById('play-btn').textContent = '⏸ Pause';
+        if (currentStepIdx >= currentSteps.length - 1) currentStepIdx = 0;
+        playTimer = setInterval(() => {
+          if (currentStepIdx < currentSteps.length - 1) {
+            currentStepIdx++;
+            renderCurrentStep();
+          } else {
+            stopPlay();
+          }
+        }, 1100);
+      }
+    }
+
+    function stopPlay() {
+      if (playTimer) {
+        clearInterval(playTimer);
+        playTimer = null;
+      }
+      document.getElementById('play-btn').textContent = '▶ Play';
+    }
+
+    // Bezier Curved Binary Tree SVG Renderer with Anti-Overlap Capsule Layout
+    function renderTreeSvg(root) {
+      const svg = document.getElementById('tree-svg');
+      svg.innerHTML = '';
+      if (!root) return;
+
+      function getNodeWidth(val) {
+        const len = String(val).length;
+        return Math.max(32, len * 9 + 14);
+      }
+
+      let nextX = 36;
+      const levelHeight = 52;
+
+      function layout(node, depth) {
+        if (!node) return;
+        if (node.left) layout(node.left, depth + 1);
+        
+        const w = getNodeWidth(node.val);
+        node.width = w;
+        node.x = nextX + w / 2;
+        node.y = 28 + depth * levelHeight;
+        nextX += w + 20; // guarantees no two nodes touch
+        
+        if (node.right) layout(node.right, depth + 1);
+      }
+      layout(root, 0);
+
+      const totalWidth = Math.max(nextX + 36, 400);
+      const depth = getDepth(root);
+      const totalHeight = Math.max(38 + (depth + 1) * levelHeight, 180);
+      svg.setAttribute('viewBox', `0 0 ${totalWidth} ${totalHeight}`);
+      svg.style.minWidth = `${totalWidth}px`;
+      svg.style.minHeight = `${totalHeight}px`;
+
+      function getDepth(n) {
+        if (!n) return 0;
+        return 1 + Math.max(getDepth(n.left), getDepth(n.right));
+      }
+
+      // Draw Smooth Curved Bezier Connecting Edges
+      function drawCurves(node) {
+        if (!node) return;
+        if (node.left) {
+          drawBezier(node.x, node.y, node.left.x, node.left.y);
+          drawCurves(node.left);
+        }
+        if (node.right) {
+          drawBezier(node.x, node.y, node.right.x, node.right.y);
+          drawCurves(node.right);
+        }
+      }
+      function drawBezier(x1, y1, x2, y2) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const midY = (y1 + y2) / 2;
+        const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'rgba(148, 163, 184, 0.4)');
+        path.setAttribute('stroke-width', '2');
+        svg.appendChild(path);
+      }
+      drawCurves(root);
+
+      // Draw Nodes as rounded capsules/circles preventing any text or boundary overlaps
+      function drawNodes(node) {
+        if (!node) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const h = 28;
+        rect.setAttribute('x', node.x - node.width / 2);
+        rect.setAttribute('y', node.y - h / 2);
+        rect.setAttribute('width', node.width);
+        rect.setAttribute('height', h);
+        rect.setAttribute('rx', 14);
+        rect.setAttribute('ry', 14);
+
+        if (node.type === 'operator') {
+          rect.setAttribute('fill', '#1e293b');
+          rect.setAttribute('stroke', '#818cf8');
+          rect.setAttribute('stroke-width', '2');
+        } else {
+          rect.setAttribute('fill', '#0f172a');
+          rect.setAttribute('stroke', '#10b981');
+          rect.setAttribute('stroke-width', '2');
+        }
+
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', node.x);
+        txt.setAttribute('y', node.y + 4.5);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('font-family', 'JetBrains Mono, monospace');
+        txt.setAttribute('font-size', '11');
+        txt.setAttribute('font-weight', '600');
+        txt.setAttribute('fill', '#f8fafc');
+        txt.textContent = node.val;
+
+        g.appendChild(rect);
+        g.appendChild(txt);
+        svg.appendChild(g);
+
+        drawNodes(node.left);
+        drawNodes(node.right);
+      }
+      drawNodes(root);
+    }
+
+    // History Modal
+    async function openHistoryModal() {
+      document.getElementById('history-modal').style.display = 'flex';
+      try {
+        const res = await fetch(`${API}/history`);
+        const data = await res.json();
+        const list = data.history || [];
+        const body = document.getElementById('history-modal-body');
+        if (!list.length) {
+          body.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:24px 0;">No history recorded</div>';
+          return;
+        }
+        body.innerHTML = list.map(item => `
+          <div class="history-entry-card" onclick="loadFromHistory('${item.expression.replace(/'/g, "\\'")}')">
+            <span class="history-entry-expr">${item.expression}</span>
+            <span class="history-entry-res">${item.result}</span>
+          </div>
+        `).join('');
+      } catch (_) {}
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('history-modal').style.display = 'none';
+    }
+
+    function loadFromHistory(expr) {
+      document.getElementById('expr-input').value = expr;
+      closeHistoryModal();
+      processExpression('evaluate');
+    }
+
+    async function clearHistoryApi() {
+      await fetch(`${API}/history`, { method: 'DELETE' });
+      document.getElementById('history-modal-body').innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:24px 0;">History cleared</div>';
+    }
+
+    document.getElementById('expr-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') processExpression('evaluate');
+    });
+
+    // Auto-run on load
+    processExpression('evaluate');
+  </script>
+</body>
+</html>
